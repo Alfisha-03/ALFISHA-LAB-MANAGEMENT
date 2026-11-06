@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Records | College Lab Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">L</div>
+            <div>
+                <h2>LAB MANAGEMENT</h2>
+                <p>Equipment Manager</p>
+            </div>
+        </div>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav>
+            <a href="index.html">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="users.html">
+                <span>♙</span> Users
+            </a>
+
+            <a href="issue.html">
+                <span>＋</span> Issue Equipment
+            </a>
+
+            <a href="returns.html">
+                <span>↩</span> Return Equipment
+            </a>
+
+            <a href="records.html" class="active">
+                <span>▤</span> Issue Records
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            College Lab Equipment<br>
+            Management System
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <div class="topbar">
+            <div>
+                <h1>Issue Records</h1>
+                <p>College Lab Equipment Management System</p>
+            </div>
+
+            <span class="system-status">System Active</span>
+        </div>
+
+        <section class="container">
+
+            <div class="page-heading">
+                <p class="eyebrow">TRANSACTION HISTORY</p>
+                <h2>Equipment Issue Records</h2>
+                <p>View and track all issued and returned equipment.</p>
+            </div>
+
+            <section class="table-section">
+
+                <div class="table-header">
+                    <div>
+                        <h3>All Transactions</h3>
+                        <p class="subtitle">
+                            Complete history of equipment movements
+                        </p>
+                    </div>
+
+                    <button type="button" id="refreshRecords">
+                        Refresh Records
+                    </button>
+                </div>
+
+                <p id="message" class="message" role="status"></p>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Issue ID</th>
+                                <th>Equipment</th>
+                                <th>User</th>
+                                <th>Issue Date</th>
+                                <th>Issued</th>
+                                <th>Returned</th>
+                                <th>Return Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="recordsTable">
+                            <tr>
+                                <td colspan="8">Loading records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+        </section>
+
+        <footer>
+            College Lab Equipment Management System
+        </footer>
+
+    </main>
+
+    <script>
+        const table = document.getElementById('recordsTable');
+        const message = document.getElementById('message');
+        const refreshButton = document.getElementById('refreshRecords');
+
+        refreshButton.addEventListener('click', loadRecords);
+
+        async function loadRecords() {
+            table.innerHTML =
+                '<tr><td colspan="8">Loading records...</td></tr>';
+
+            message.textContent = '';
+            message.className = 'message';
+            refreshButton.disabled = true;
+
+            try {
+                const response = await fetch('/api/issues');
+
+                if (!response.ok) {
+                    throw new Error('Unable to load issue records.');
+                }
+
+                const records = await response.json();
+
+                table.innerHTML = '';
+
+                if (!Array.isArray(records) || records.length === 0) {
+                    table.innerHTML =
+                        '<tr><td colspan="8">No issue records found.</td></tr>';
+                    return;
+                }
+
+                records.forEach(record => {
+                    const row = document.createElement('tr');
+
+                    const values = [
+                        record.issue_id,
+                        record.equipment_name,
+                        record.user_name,
+                        record.issue_date,
+                        record.quantity,
+                        record.returned_quantity,
+                        record.return_date || 'Not fully returned',
+                        record.status
+                    ];
+
+                    values.forEach((value, index) => {
+                        const cell = document.createElement('td');
+
+                        cell.textContent =
+                            value === null || value === undefined || value === ''
+                                ? '-'
+                                : value;
+
+                        if (index === 7) {
+                            const status = String(value || '').toLowerCase();
+
+                            if (status === 'returned') {
+                                cell.className = 'status-returned';
+                            } else if (status === 'issued') {
+                                cell.className = 'status-issued';
+                            } else {
+                                cell.className = 'status-unknown';
+                            }
+                        }
+
+                        row.appendChild(cell);
+                    });
+
+                    table.appendChild(row);
+                });
+
+            } catch (error) {
+                table.innerHTML =
+                    '<tr><td colspan="8">Could not load records.</td></tr>';
+
+                message.textContent =
+                    error.message + ' Check that the server is running.';
+
+                message.classList.add('error');
+
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
+
+        loadRecords();
+    </script>
+
+</body>
+</html>

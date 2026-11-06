@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | LabTrack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- FIXED LEFT SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">L</div>
+            <div>
+                <h2>LABTRACK</h2>
+                <p>Equipment Manager</p>
+            </div>
+        </div>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav>
+            <a href="index.html">Dashboard</a>
+            <a href="users.html" class="active">Users</a>
+            <a href="issue.html">Issue Equipment</a>
+            <a href="returns.html">Return Equipment</a>
+            <a href="records.html">Issue Records</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            College Lab Equipment<br>
+            Management System
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1>User Management</h1>
+                <p>Manage registered laboratory users.</p>
+            </div>
+            <span class="system-status">System Active</span>
+        </header>
+
+        <section class="container">
+
+            <div class="page-heading">
+                <p class="eyebrow">USER ADMINISTRATION</p>
+                <h2>Students and Staff</h2>
+                <p>Register students and staff and manage user details.</p>
+            </div>
+
+            <!-- ADD USER FORM -->
+            <section class="form-section">
+
+                <div class="section-heading">
+                    <div>
+                        <h3>Add New User</h3>
+                        <p>Enter the user's details to create a record.</p>
+                    </div>
+                </div>
+
+                <form id="userForm">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input
+                                type="text"
+                                id="name"
+                                placeholder="Enter full name"
+                                autocomplete="name"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input
+                                type="email"
+                                id="email"
+                                placeholder="Enter email address"
+                                autocomplete="email"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input
+                                type="password"
+                                id="password"
+                                placeholder="Minimum 8 characters"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                            >
+                            <small class="helper-text">
+                                Password must contain at least 8 characters.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="role">User Role</label>
+                            <select id="role" required>
+                                <option value="Student">Student</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="primary-btn">
+                            Register User
+                        </button>
+
+                        <button
+                            type="reset"
+                            class="secondary-btn"
+                        >
+                            Clear Form
+                        </button>
+                    </div>
+
+                </form>
+
+                <p id="message" class="message" role="status" aria-live="polite"></p>
+
+            </section>
+
+            <!-- REGISTERED USERS TABLE -->
+            <section class="table-section">
+
+                <div class="table-header">
+                    <div>
+                        <h3>Registered Users</h3>
+                        <p>View and search registered students and staff.</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        id="refreshUsers"
+                    >
+                        Refresh Users
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label for="searchUsers">Search Users</label>
+                    <input
+                        type="search"
+                        id="searchUsers"
+                        placeholder="Search by name or email..."
+                    >
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="usersTable">
+                            <tr>
+                                <td colspan="4">Loading users...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+
+        </section>
+
+        <footer>College Lab Equipment Management System</footer>
+    </main>
+
+    <script>
+        const userForm = document.getElementById('userForm');
+        const usersTable = document.getElementById('usersTable');
+        const message = document.getElementById('message');
+        const searchUsers = document.getElementById('searchUsers');
+        const refreshUsers = document.getElementById('refreshUsers');
+
+        async function loadUsers(search = '') {
+            usersTable.innerHTML =
+                '<tr><td colspan="4">Loading users...</td></tr>';
+
+            try {
+                const response = await fetch(
+                    '/api/users?search=' + encodeURIComponent(search)
+                );
+
+                const users = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        users.message || 'Could not load users.'
+                    );
+                }
+
+                usersTable.replaceChildren();
+
+                if (users.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+
+                    cell.colSpan = 4;
+                    cell.textContent = 'No users found.';
+                    cell.className = 'empty-state';
+
+                    row.appendChild(cell);
+                    usersTable.appendChild(row);
+                    return;
+                }
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+
+                    [user.user_id, user.name, user.email, user.role]
+                        .forEach(value => {
+                            const cell = document.createElement('td');
+                            cell.textContent = value ?? '';
+                            row.appendChild(cell);
+                        });
+
+                    usersTable.appendChild(row);
+                });
+
+            } catch (error) {
+                usersTable.replaceChildren();
+
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+
+                cell.colSpan = 4;
+                cell.textContent = 'Failed to load users. Please try again.';
+
+                row.appendChild(cell);
+                usersTable.appendChild(row);
+            }
+        }
+
+        userForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const user = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value
+            };
+
+            message.textContent = 'Registering user...';
+            message.className = 'message info';
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(user)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.message || 'Registration failed.'
+                    );
+                }
+
+                message.textContent =
+                    result.message || 'User registered successfully.';
+                message.className = 'message success';
+
+                userForm.reset();
+
+                await loadUsers(searchUsers.value);
+
+            } catch (error) {
+                message.textContent = error.message;
+                message.className = 'message error';
+            }
+        });
+
+        searchUsers.addEventListener('input', function () {
+            loadUsers(searchUsers.value);
+        });
+
+        refreshUsers.addEventListener('click', function () {
+            loadUsers(searchUsers.value);
+        });
+
+        userForm.addEventListener('reset', function () {
+            message.textContent = '';
+            message.className = 'message';
+        });
+
+        loadUsers();
+    </script>
+
+</body>
+</html>

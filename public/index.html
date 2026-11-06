@@ -1,0 +1,319 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Alfisha LabTrack | Equipment Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">A</div>
+
+            <div>
+                <h2>ALFISHA LABTRACK</h2>
+                <p>Equipment Manager</p>
+            </div>
+        </div>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav>
+            <a href="index.html" class="active">
+                <span>▦</span>
+                Dashboard
+            </a>
+
+            <a href="users.html">
+                <span>♙</span>
+                Users
+            </a>
+
+            <a href="issue.html">
+                <span>＋</span>
+                Issue Equipment
+            </a>
+
+            <a href="returns.html">
+                <span>↩</span>
+                Return Equipment
+            </a>
+
+            <a href="records.html">
+                <span>▤</span>
+                Issue Records
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            College Lab Equipment<br>
+            Management System
+        </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+
+            <div class="topbar-title">
+
+                <button
+                    type="button"
+                    id="sidebarToggle"
+                    class="sidebar-toggle"
+                    aria-label="Hide sidebar"
+                    aria-controls="sidebar"
+                    aria-expanded="true"
+                    title="Hide or show sidebar"
+                >☰</button>
+
+                <div>
+                   <div class="topbar-title">
+  
+
+    <h1>Equipment Dashboard</h1>
+</div>
+                    <p>College Lab Equipment Management System</p>
+                </div>
+
+            </div>
+
+            <span class="system-status">System Online</span>
+
+        </header>
+
+        <section class="container">
+
+            <!-- WELCOME SECTION -->
+            <section class="welcome">
+
+                <div>
+                    <p class="eyebrow">LABORATORY ADMINISTRATION</p>
+
+                    <h2>Welcome to Alfisha LabTrack</h2>
+
+                    <p class="subtitle">
+                        Manage laboratory equipment, quantities and availability.
+                    </p>
+                </div>
+
+                <div class="date-box">
+                    <span>Today's Date</span>
+                    <strong id="todayDate">--</strong>
+                </div>
+
+            </section>
+
+            <!-- LABORATORY IMAGE -->
+            <section class="lab-banner">
+
+                <img
+                    src="images/laboratory.jpg"
+                    alt="College laboratory with equipment and workstations"
+                >
+
+                <div class="lab-banner-caption">
+                    <h2>Alfisha LabTrack</h2>
+                    <p>
+                        Organize equipment. Track issues. Manage returns.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- DASHBOARD STATISTICS -->
+            <section class="stats">
+
+                <div class="stat-card">
+                    <span>Total Equipment Types</span>
+                    <h3 id="totalTypes">0</h3>
+                    <p>Registered equipment</p>
+                </div>
+
+                <div class="stat-card">
+                    <span>Total Units</span>
+                    <h3 id="totalUnits">0</h3>
+                    <p>Across all equipment</p>
+                </div>
+
+                <div class="stat-card">
+                    <span>Available Units</span>
+                    <h3 id="availableUnits">0</h3>
+                    <p>Ready for issue</p>
+                </div>
+
+                <div class="stat-card">
+                    <span>Issued Units</span>
+                    <h3 id="issuedUnits">0</h3>
+                    <p>Currently in use</p>
+                </div>
+
+            </section>
+
+            <!-- ADD EQUIPMENT -->
+            <section class="panel">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Add Equipment</h2>
+                        <p>Register a new item in your laboratory.</p>
+                    </div>
+                </div>
+
+                <form id="equipmentForm">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="name">Equipment Name</label>
+
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                placeholder="e.g. Desktop Computer"
+                                maxlength="100"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category</label>
+
+                            <select
+                                id="category"
+                                name="category"
+                                required
+                            >
+                                <option value="">Select category</option>
+                                <option value="Computer">Computer</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Networking">Networking</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Total Quantity</label>
+
+                            <input
+                                type="number"
+                                id="quantity"
+                                name="quantity"
+                                min="1"
+                                step="1"
+                                placeholder="Enter quantity"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+                    <button type="submit" class="primary-btn">
+                        + Add Equipment
+                    </button>
+
+                    <p
+                        id="formMessage"
+                        class="message"
+                        role="status"
+                    ></p>
+
+                </form>
+
+            </section>
+
+            <!-- EQUIPMENT INVENTORY -->
+            <section class="panel">
+
+                <div class="section-heading inventory-heading">
+
+                    <div>
+                        <h2>Equipment Inventory</h2>
+                        <p>
+                            View and search registered laboratory equipment.
+                        </p>
+                    </div>
+
+                    <button
+                        id="refreshBtn"
+                        class="secondary-btn"
+                        type="button"
+                    >
+                        Refresh
+                    </button>
+
+                </div>
+
+                <!-- SEARCH EQUIPMENT -->
+                <div class="search-box">
+
+                    <label for="searchInput">Search Equipment</label>
+
+                    <input
+                        type="search"
+                        id="searchInput"
+                        placeholder="Search by equipment name or category..."
+                    >
+
+                </div>
+
+                <!-- EQUIPMENT TABLE -->
+                <div class="table-wrapper">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Equipment Name</th>
+                                <th>Category</th>
+                                <th>Total Quantity</th>
+                                <th>Available</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="equipmentTable">
+                            <tr>
+                                <td colspan="6">Loading equipment...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <p
+                    id="inventoryMessage"
+                    class="message"
+                    role="status"
+                ></p>
+
+            </section>
+
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>ALFISHA LABTRACK · College Lab Equipment Management System</p>
+            <p>Developed by Alfisha · 2026</p>
+        </footer>
+
+    </main>
+
+    <!-- JAVASCRIPT -->
+    <script src="script.js"></script>
+
+</body>
+</html>

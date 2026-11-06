@@ -1,0 +1,346 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Equipment | LabTrack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- FIXED LEFT SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">L</div>
+            <div>
+                <h2>LABTRACK</h2>
+                <p>Equipment Manager</p>
+            </div>
+        </div>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav>
+            <a href="index.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="issue.html">Issue Equipment</a>
+            <a href="returns.html" class="active">Return Equipment</a>
+            <a href="records.html">Issue Records</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            College Lab Equipment<br>
+            Management System
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1>Return Equipment</h1>
+                <p>Manage equipment returns and outstanding issues.</p>
+            </div>
+            <span class="system-status">System Active</span>
+        </header>
+
+        <section class="container">
+
+            <div class="page-heading">
+                <p class="eyebrow">EQUIPMENT MANAGEMENT</p>
+                <h2>Record Equipment Return</h2>
+                <p>Select an outstanding issue and enter the quantity being returned.</p>
+            </div>
+
+            <!-- RETURN FORM -->
+            <section class="form-section">
+                <div class="section-heading">
+                    <div>
+                        <h3>Return Details</h3>
+                        <p>Return all or part of an outstanding equipment issue.</p>
+                    </div>
+                </div>
+
+                <form id="returnForm">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="issueId">Outstanding Issue</label>
+                            <select id="issueId" required>
+                                <option value="">Loading issue records...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="returnQuantity">Quantity to Return</label>
+                            <input
+                                type="number"
+                                id="returnQuantity"
+                                min="1"
+                                step="1"
+                                value="1"
+                                required
+                            >
+                            <small id="issueInfo" class="helper-text"></small>
+                        </div>
+
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="returnButton" class="primary-btn">
+                            Record Return
+                        </button>
+
+                        <button
+                            type="button"
+                            class="secondary-btn"
+                            onclick="window.location.href='index.html'"
+                        >
+                            Back to Dashboard
+                        </button>
+                    </div>
+
+                </form>
+
+                <p id="message" class="message" role="status" aria-live="polite"></p>
+            </section>
+
+            <!-- OUTSTANDING ISSUES TABLE -->
+            <section class="table-section">
+
+                <div class="table-header">
+                    <div>
+                        <h3>Outstanding Issues</h3>
+                        <p>Equipment that has not yet been fully returned.</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        id="refreshIssuesButton"
+                    >
+                        Refresh Records
+                    </button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Issue ID</th>
+                                <th>Equipment</th>
+                                <th>User</th>
+                                <th>Issue Date</th>
+                                <th>Quantity Still Issued</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="issuesTable">
+                            <tr>
+                                <td colspan="5">Loading records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+
+        </section>
+
+        <footer>College Lab Equipment Management System</footer>
+    </main>
+
+    <script>
+        const issueSelect = document.getElementById('issueId');
+        const quantityInput = document.getElementById('returnQuantity');
+        const issueInfo = document.getElementById('issueInfo');
+        const issuesTable = document.getElementById('issuesTable');
+        const message = document.getElementById('message');
+        const returnButton = document.getElementById('returnButton');
+        const refreshIssuesButton =
+            document.getElementById('refreshIssuesButton');
+
+        let outstandingIssues = [];
+
+        async function loadIssues() {
+            refreshIssuesButton.disabled = true;
+
+            try {
+                const response = await fetch('/api/issues/open');
+                const issues = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        issues.message || 'Could not load issue records.'
+                    );
+                }
+
+                outstandingIssues = issues;
+                issueSelect.replaceChildren();
+
+                issueSelect.add(
+                    new Option('Choose an issue record', '')
+                );
+
+                issues.forEach(issue => {
+                    issueSelect.add(new Option(
+                        `Issue #${issue.issue_id} — ${issue.equipment_name} — ${issue.user_name} — ${issue.remaining_quantity} remaining`,
+                        issue.issue_id
+                    ));
+                });
+
+                issuesTable.replaceChildren();
+
+                if (issues.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+
+                    cell.colSpan = 5;
+                    cell.textContent = 'No outstanding issues found.';
+                    cell.className = 'empty-state';
+
+                    row.appendChild(cell);
+                    issuesTable.appendChild(row);
+
+                    message.textContent =
+                        'There are no equipment issues awaiting return.';
+                    message.className = 'message info';
+                } else {
+                    message.textContent = '';
+                    message.className = 'message';
+
+                    issues.forEach(issue => {
+                        const row = document.createElement('tr');
+
+                        [
+                            issue.issue_id,
+                            issue.equipment_name,
+                            issue.user_name,
+                            issue.issue_date,
+                            issue.remaining_quantity
+                        ].forEach(value => {
+                            const cell = document.createElement('td');
+                            cell.textContent = value ?? '';
+                            row.appendChild(cell);
+                        });
+
+                        issuesTable.appendChild(row);
+                    });
+                }
+
+                updateIssueInfo();
+
+            } catch (error) {
+                message.textContent = error.message;
+                message.className = 'message error';
+
+                issuesTable.replaceChildren();
+
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+
+                cell.colSpan = 5;
+                cell.textContent = 'Could not load records.';
+
+                row.appendChild(cell);
+                issuesTable.appendChild(row);
+
+            } finally {
+                refreshIssuesButton.disabled = false;
+            }
+        }
+
+        function updateIssueInfo() {
+            const issue = outstandingIssues.find(
+                item => Number(item.issue_id) === Number(issueSelect.value)
+            );
+
+            if (issue) {
+                issueInfo.textContent =
+                    `Quantity still issued: ${issue.remaining_quantity}`;
+
+                quantityInput.max = issue.remaining_quantity;
+            } else {
+                issueInfo.textContent = '';
+                quantityInput.removeAttribute('max');
+            }
+        }
+
+        issueSelect.addEventListener('change', updateIssueInfo);
+
+        refreshIssuesButton.addEventListener('click', loadIssues);
+
+        document.getElementById('returnForm').addEventListener(
+            'submit',
+            async function (event) {
+                event.preventDefault();
+
+                const issueId = Number(issueSelect.value);
+                const quantity = Number(quantityInput.value);
+
+                const issue = outstandingIssues.find(
+                    item => Number(item.issue_id) === issueId
+                );
+
+                if (
+                    !issue ||
+                    !Number.isInteger(quantity) ||
+                    quantity < 1 ||
+                    quantity > Number(issue.remaining_quantity)
+                ) {
+                    message.textContent =
+                        'Select a valid issue and enter a valid return quantity.';
+                    message.className = 'message error';
+                    return;
+                }
+
+                returnButton.disabled = true;
+                message.textContent = 'Recording return...';
+                message.className = 'message info';
+
+                try {
+                    const response = await fetch(
+                        `/api/issues/${issueId}/return`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ quantity })
+                        }
+                    );
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(
+                            result.message || 'Could not record return.'
+                        );
+                    }
+
+                    message.textContent =
+                        result.message || 'Equipment return recorded successfully.';
+                    message.className = 'message success';
+
+                    quantityInput.value = 1;
+
+                    await loadIssues();
+
+                } catch (error) {
+                    message.textContent = error.message;
+                    message.className = 'message error';
+
+                } finally {
+                    returnButton.disabled = false;
+                }
+            }
+        );
+
+        loadIssues();
+    </script>
+
+</body>
+</html>

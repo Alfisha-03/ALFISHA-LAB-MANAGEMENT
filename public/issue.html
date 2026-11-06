@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Equipment | LabTrack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- FIXED LEFT SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">L</div>
+            <div>
+                <h2>LABTRACK</h2>
+                <p>Equipment Manager</p>
+            </div>
+        </div>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav>
+            <a href="index.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="issue.html" class="active">Issue Equipment</a>
+            <a href="returns.html">Return Equipment</a>
+            <a href="records.html">Issue Records</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            College Lab Equipment<br>
+            Management System
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1>Issue Equipment</h1>
+                <p>Record equipment issued to laboratory users.</p>
+            </div>
+            <span class="system-status">System Active</span>
+        </header>
+
+        <section class="container">
+
+            <div class="page-heading">
+                <p class="eyebrow">EQUIPMENT MANAGEMENT</p>
+                <h2>Issue Laboratory Equipment</h2>
+                <p>Select a registered user and available equipment to record an issue.</p>
+            </div>
+
+            <section class="form-section">
+                <div class="section-heading">
+                    <div>
+                        <h3>Issue Details</h3>
+                        <p>Enter the details below to issue equipment.</p>
+                    </div>
+                </div>
+
+                <form id="issueForm">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="userId">Select User</label>
+                            <select id="userId" required>
+                                <option value="">Loading users...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="equipmentId">Select Equipment</label>
+                            <select id="equipmentId" required>
+                                <option value="">Loading equipment...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Quantity to Issue</label>
+                            <input
+                                type="number"
+                                id="quantity"
+                                min="1"
+                                step="1"
+                                value="1"
+                                required
+                            >
+                            <small id="availableInfo" class="helper-text"></small>
+                        </div>
+
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="issueButton" class="primary-btn">
+                            Issue Equipment
+                        </button>
+
+                        <button
+                            type="button"
+                            class="secondary-btn"
+                            onclick="window.location.href='index.html'"
+                        >
+                            Back to Dashboard
+                        </button>
+                    </div>
+
+                </form>
+
+                <p id="message" class="message" role="status" aria-live="polite"></p>
+            </section>
+
+        </section>
+
+        <footer>College Lab Equipment Management System</footer>
+    </main>
+
+    <script>
+        const userSelect = document.getElementById('userId');
+        const equipmentSelect = document.getElementById('equipmentId');
+        const quantityInput = document.getElementById('quantity');
+        const availableInfo = document.getElementById('availableInfo');
+        const message = document.getElementById('message');
+        const issueButton = document.getElementById('issueButton');
+
+        let equipmentList = [];
+
+        async function loadOptions() {
+            try {
+                const [userResponse, equipmentResponse] = await Promise.all([
+                    fetch('/api/users'),
+                    fetch('/api/equipment')
+                ]);
+
+                if (!userResponse.ok || !equipmentResponse.ok) {
+                    throw new Error('Could not load users or equipment.');
+                }
+
+                const users = await userResponse.json();
+                const equipment = await equipmentResponse.json();
+
+                userSelect.replaceChildren();
+                equipmentSelect.replaceChildren();
+
+                userSelect.add(new Option('Choose a user', ''));
+
+                users.forEach(user => {
+                    userSelect.add(new Option(
+                        `${user.name} (${user.role})`,
+                        user.user_id
+                    ));
+                });
+
+                equipmentList = equipment;
+
+                equipmentSelect.add(new Option('Choose equipment', ''));
+
+                equipmentList
+                    .filter(item => Number(item.available_quantity) > 0)
+                    .forEach(item => {
+                        equipmentSelect.add(new Option(
+                            `${item.name} — ${item.available_quantity} available`,
+                            item.equipment_id
+                        ));
+                    });
+
+                if (users.length === 0) {
+                    message.textContent =
+                        'Register a user before issuing equipment.';
+                    message.className = 'message info';
+                } else if (equipmentSelect.options.length === 1) {
+                    message.textContent =
+                        'No equipment is currently available.';
+                    message.className = 'message info';
+                } else {
+                    message.textContent = '';
+                    message.className = 'message';
+                }
+
+                updateAvailableInfo();
+
+            } catch (error) {
+                message.textContent = error.message;
+                message.className = 'message error';
+            }
+        }
+
+        function updateAvailableInfo() {
+            const selectedId = Number(equipmentSelect.value);
+
+            const item = equipmentList.find(
+                equipment =>
+                    Number(equipment.equipment_id) === selectedId
+            );
+
+            if (item) {
+                availableInfo.textContent =
+                    `Available quantity: ${item.available_quantity}`;
+
+                quantityInput.max = item.available_quantity;
+            } else {
+                availableInfo.textContent = '';
+                quantityInput.removeAttribute('max');
+            }
+        }
+
+        equipmentSelect.addEventListener('change', updateAvailableInfo);
+
+        document.getElementById('issueForm').addEventListener(
+            'submit',
+            async function (event) {
+                event.preventDefault();
+
+                const userId = Number(userSelect.value);
+                const equipmentId = Number(equipmentSelect.value);
+                const quantity = Number(quantityInput.value);
+
+                const selectedEquipment = equipmentList.find(
+                    item =>
+                        Number(item.equipment_id) === equipmentId
+                );
+
+                if (
+                    !userId ||
+                    !selectedEquipment ||
+                    !Number.isInteger(quantity) ||
+                    quantity < 1 ||
+                    quantity > Number(selectedEquipment.available_quantity)
+                ) {
+                    message.textContent =
+                        'Select a valid user and equipment, and enter a valid available quantity.';
+                    message.className = 'message error';
+                    return;
+                }
+
+                issueButton.disabled = true;
+                message.textContent = 'Recording equipment issue...';
+                message.className = 'message info';
+
+                try {
+                    const response = await fetch('/api/issues', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            equipment_id: equipmentId,
+                            quantity: quantity
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(
+                            result.message || 'Could not issue equipment.'
+                        );
+                    }
+
+                    message.textContent =
+                        result.message || 'Equipment issued successfully.';
+                    message.className = 'message success';
+
+                    quantityInput.value = 1;
+
+                    await loadOptions();
+
+                } catch (error) {
+                    message.textContent = error.message;
+                    message.className = 'message error';
+                } finally {
+                    issueButton.disabled = false;
+                }
+            }
+        );
+
+        loadOptions();
+    </script>
+
+</body>
+</html>
